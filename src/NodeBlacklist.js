@@ -1,5 +1,5 @@
 module.exports = {
-  range: true,
-  start: true,
-  end: true,
+  // range: true,
+  // start: true,
+  // end: true,
 };
