@@ -1,4 +1,3 @@
 {
-  "app.js": ["./src/app"],
-  "babel.js": ["./src/babel"]
+  "app.js": ["./src/app"]
 }

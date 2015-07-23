@@ -2,6 +2,7 @@
 
 var React = require('react/addons');
 
+// TODO: replace with tacoscript-core/lib/esgen and tacoscript-core/lib/tacogen
 var escodegen = require('escodegen');
 
 var PasteDropTarget = React.createClass({

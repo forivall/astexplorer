@@ -15,9 +15,8 @@ var Snippet = require('./Snippet');
 var SplitPane = require('./SplitPane');
 var Toolbar = require('./Toolbar');
 
-var babel;
 var getFocusPath = require('./getFocusPath');
-var esprima = require('esprima-fb');
+var babylon = require('babylon');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
@@ -42,7 +41,7 @@ var App = React.createClass({
       content: revision && revision.get('code') || initialCode,
       snippet: snippet,
       revision: revision,
-      parser: 'esprima-fb',
+      parser: 'babylon',
     };
   },
 
@@ -122,25 +121,32 @@ var App = React.createClass({
     }
 
     return new Promise((resolve, reject) => {
-      if (parser === 'esprima-fb') {
+      if (parser === 'babylon') {
         try {
           resolve(
-            esprima.parse(code, {range: true, sourceType: 'module'})
+            babylon.parse(code, {
+              range: true,
+              sourceType: 'module',
+              allowImportExportEverywhere: true,
+              allowReturnOutsideFunction:  true,
+              allowHashBang:               true,
+              ecmaVersion:                 7,
+              strictMode:                  false,
+              locations:                   true,
+              ranges:                      true,
+              features: {
+                "es7.decorators": true,
+                "es7.comprehensions": true,
+                "es7.asyncFunctions": true,
+                "es7.exportExtensions": true,
+                "es7.functionBind": true
+              },
+              plugins: { jsx: true, flow: true }
+            })
           );
         } catch(e) {
           reject(e);
         }
-      } else {
-        loadjs(['./src/babel'], b => {
-          babel = b;
-          try {
-            resolve(
-              babel.parse(code, {ranges: true, sourceType: 'module'})
-            );
-          } catch(e) {
-            reject(e);
-          }
-        }, reject);
       }
     });
   },
@@ -230,7 +236,7 @@ var App = React.createClass({
   },
 
   _onParserChange: function() {
-    var parser = this.state.parser === 'esprima-fb' ? 'babel' : 'esprima-fb';
+    var parser = this.state.parser === 'esprima-fb' ? 'babylon' : 'esprima-fb';
 
     this.parse(this.state.content, parser).then(
       ast => this.setState({
@@ -247,7 +253,7 @@ var App = React.createClass({
   },
 
   _getParser: function() {
-    return this.state.parser === 'esprima-fb' ? esprima : babel;
+    return this.state.parser === 'esprima-fb' ? {} : babylon;
   },
 
   render: function() {
