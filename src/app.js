@@ -20,6 +20,8 @@ var babylon = require('babylon');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
+var traverse = require('babel-core/lib/traversal');
+
 var initialCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
 
 function updateHashWithIDAndRevision(id, rev) {
@@ -55,6 +57,33 @@ function attachTokens(ast, code, options) {
     tokens.pop(); // pop off dummy last token
   }
   // traverse ast; attach tokens accordingly; make sure it's performed with performance in mind
+  var i = 0, l = tokens.length, cur = tokens[i];
+  function next() { return tokens[i += 1]; }
+  var stack = [];
+  function pushToken(tok) {
+    for (var i = 0, l = stack.length; i < l; i++) {
+      stack[i].tokens.push(tok);
+    }
+  }
+  traverse(ast, {
+    noScope: true,
+    enter: function(node, parent, scope, nodes) {
+      for (; cur.start < node.start; cur = next()) {
+        pushToken(cur);
+      }
+      node.tokens = [];
+      stack.push(node);
+      // console.log(node.start, stack.length);
+    },
+    exit: function(node) {
+      for (; cur && cur.end <= node.end; cur = next()) {
+        pushToken(cur);
+      }
+      var popped = stack.pop();
+      // assert(popped === node);
+      // console.log(node.end, stack.length, popped === node);
+    }
+  });
   return ast;
 }
 
