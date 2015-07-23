@@ -26,6 +26,38 @@ function updateHashWithIDAndRevision(id, rev) {
   global.location.hash = '/' + id + (rev && rev !== 0 ? '/' + rev : '');
 }
 
+var Token = require('babylon/lib/tokenize').Token;
+function attachTokens(ast, code, options) {
+  options = options || {};
+  var tokens = ast.tokens;
+  if (options.whitespace) {
+    tokens = ast.whitespaceTokens = [];
+    var state = {
+      type: 'Whitespace',
+      value: '',
+      start: 0,
+      end: 0,
+      // TODO: read from options; generate locations
+      options: {locations: false, ranges: true}
+    }
+    var cur, prev = {end: 0};
+    for (var i = 0, l = ast.tokens.length; i <= l; i++) {
+      cur = ast.tokens[i] || {start: l};
+      if (cur.start > prev.end) {
+        state.start = prev.end;
+        state.end = cur.start;
+        state.value = code.slice(state.start, state.end);
+        tokens.push(new Token(state));
+      }
+      tokens.push(cur);
+      prev = cur;
+    }
+    tokens.pop(); // pop off dummy last token
+  }
+  // traverse ast; attach tokens accordingly; make sure it's performed with performance in mind
+  return ast;
+}
+
 var App = React.createClass({
   getInitialState: function() {
     var snippet = this.props.snippet;
@@ -124,25 +156,29 @@ var App = React.createClass({
       if (parser === 'babylon') {
         try {
           resolve(
-            babylon.parse(code, {
-              range: true,
-              sourceType: 'module',
-              allowImportExportEverywhere: true,
-              allowReturnOutsideFunction:  true,
-              allowHashBang:               true,
-              ecmaVersion:                 7,
-              strictMode:                  false,
-              locations:                   true,
-              ranges:                      true,
-              features: {
-                "es7.decorators": true,
-                "es7.comprehensions": true,
-                "es7.asyncFunctions": true,
-                "es7.exportExtensions": true,
-                "es7.functionBind": true
-              },
-              plugins: { jsx: true, flow: true }
-            })
+            attachTokens(
+              babylon.parse(code, {
+                range: true,
+                sourceType: 'module',
+                allowImportExportEverywhere: true,
+                allowReturnOutsideFunction:  true,
+                allowHashBang:               true,
+                ecmaVersion:                 7,
+                strictMode:                  false,
+                locations:                   true,
+                ranges:                      true,
+                features: {
+                  "es7.decorators": true,
+                  "es7.comprehensions": true,
+                  "es7.asyncFunctions": true,
+                  "es7.exportExtensions": true,
+                  "es7.functionBind": true
+                },
+                plugins: { jsx: true, flow: true }
+              }),
+              code, {
+                whitespace: true
+              })
           );
         } catch(e) {
           reject(e);
