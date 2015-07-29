@@ -137,7 +137,12 @@ html {
 
 .splitpane > .splitpane-divider:hover {
   background-color: #999;
+}
+.splitpane > .splitpane-divider-col:hover {
   cursor: col-resize;
+}
+.splitpane > .splitpane-divider-row:hover {
+  cursor: row-resize;
 }
 
 #output {
