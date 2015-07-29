@@ -17,6 +17,7 @@
     "http-server": "^0.8.0",
     "partition-bundle": "^1.3.0",
     "reactify": "^1.0.0",
+    "shelljs": "^0.5.1",
     "uglify-js": "^2.4.16",
     "uglifyify": "^3.0.1",
     "watchify": "^3.2.3"
@@ -26,6 +27,7 @@
   },
   "dependencies": {
     "babylon": "^5.7.2",
+    "tacoscript-core": "*",
     "codemirror": "^5.1.0",
     "keypress": "git://github.com/dmauro/Keypress",
     "pubsub-js": "^1.4.2",
@@ -45,7 +47,8 @@
     ]
   },
   "scripts": {
-    "start": "http-server",
-    "build": "NODE_ENV=production browserify -p [partition-bundle --map partition.json --output ./ --main ./src/app] -g [uglifyify -b beautify=false,ascii-only=true]"
+    "start": "watchify --debug src/app.js -o app.js & http-server",
+    "build-production": "NODE_ENV=production browserify src/app.js -o app.js -g [uglifyify -b beautify=false,ascii-only=true]",
+    "build": "browserify src/app.js -o app.js"
   }
 }

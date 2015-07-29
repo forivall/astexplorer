@@ -7,7 +7,7 @@ html {
 .dropTarget {
   position: absolute;
   top: 0;
-  bottom: 26px;
+  bottom: 0;
   left: 0;
   right: 0;
 }
@@ -38,9 +38,10 @@ html {
   font-family: monospace;
   position: absolute;
   left: 0;
+  /*z-index: 1;*/
   top: 0;
   right: 0;
-  height: 35px;
+  height: 25px;
   line-height: 35px;
   border-bottom: 1px solid #ddd;
   color: #454545;
@@ -124,7 +125,7 @@ html {
 
 .splitpane {
   position: absolute;
-  top: 36px;
+  top: 0;
   bottom: 0;
   left: 0;
   right: 0;

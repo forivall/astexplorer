@@ -64,7 +64,7 @@ var ASTOutput = React.createClass({
 
     return (
       <div id="output" className="highlight">
-        <div className="toolbar">
+        {/*<div className="toolbar">
           <button
             onClick={this._changeOutput}
             value="tree"
@@ -82,6 +82,8 @@ var ASTOutput = React.createClass({
             JSON
           </button>
         </div>
+        */}
+        {this.props.children}
         {output}
       </div>
     );

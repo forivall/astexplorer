@@ -20,7 +20,7 @@ var Toolbar = React.createClass({
   render: function() {
     return (
       <div id="Toolbar">
-        <h1>JS AST Explorer</h1>
+        {/*<h1>JS AST Explorer</h1>*/}
         <button
           type="button"
           disabled={
@@ -69,9 +69,9 @@ var Toolbar = React.createClass({
           />
           &nbsp;{this.props.parserName}
         </button>
-        <div id="parser">
+        {/*<div id="parser">
           Parser: {this.props.parserName}-{this.props.parserVersion}
-        </div>
+        </div>*/}
       </div>
     );
   },

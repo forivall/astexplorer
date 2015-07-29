@@ -20,72 +20,13 @@ var babylon = require('babylon');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
-var traverse = require('babel-core/lib/traversal');
-
 var initialCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
 
 function updateHashWithIDAndRevision(id, rev) {
   global.location.hash = '/' + id + (rev && rev !== 0 ? '/' + rev : '');
 }
 
-var Token = require('babylon/lib/tokenize').Token;
-function attachTokens(ast, code, options) {
-  options = options || {};
-  var tokens = ast.tokens;
-  if (options.whitespace) {
-    tokens = ast.whitespaceTokens = [];
-    var state = {
-      type: 'Whitespace',
-      value: '',
-      start: 0,
-      end: 0,
-      // TODO: read from options; generate locations
-      options: {locations: false, ranges: true}
-    }
-    var cur, prev = {end: 0};
-    for (var i = 0, l = ast.tokens.length; i <= l; i++) {
-      cur = ast.tokens[i] || {start: l};
-      if (cur.start > prev.end) {
-        state.start = prev.end;
-        state.end = cur.start;
-        state.value = code.slice(state.start, state.end);
-        tokens.push(new Token(state));
-      }
-      tokens.push(cur);
-      prev = cur;
-    }
-    tokens.pop(); // pop off dummy last token
-  }
-  // traverse ast; attach tokens accordingly; make sure it's performed with performance in mind
-  var i = 0, l = tokens.length, cur = tokens[i];
-  function next() { return tokens[i += 1]; }
-  var stack = [];
-  function pushToken(tok) {
-    for (var i = 0, l = stack.length; i < l; i++) {
-      stack[i].tokens.push(tok);
-    }
-  }
-  traverse(ast, {
-    noScope: true,
-    enter: function(node, parent, scope, nodes) {
-      for (; cur.start < node.start; cur = next()) {
-        pushToken(cur);
-      }
-      node.tokens = [];
-      stack.push(node);
-      // console.log(node.start, stack.length);
-    },
-    exit: function(node) {
-      for (; cur && cur.end <= node.end; cur = next()) {
-        pushToken(cur);
-      }
-      var popped = stack.pop();
-      // assert(popped === node);
-      // console.log(node.end, stack.length, popped === node);
-    }
-  });
-  return ast;
-}
+var attachTokens = require('tacoscript-core/lib/helpers/attach-tokens')['default'];
 
 var App = React.createClass({
   getInitialState: function() {
@@ -333,20 +274,6 @@ var App = React.createClass({
         }
         onText={this._onDropText}
         onError={this._onDropError}>
-        <Toolbar
-          forking={this.state.forking}
-          saving={this.state.saving}
-          onSave={this._onSave}
-          onFork={this._onFork}
-          onParserChange={this._onParserChange}
-          canSave={
-            this.state.content !== initialCode && !revision ||
-            revision && revision.get('code') !== this.state.content
-          }
-          canFork={!!revision}
-          parserName={this.state.parser}
-          parserVersion={this._getParser().version}
-        />
         {this.state.error ? <ErrorMessage message={this.state.error} /> : null}
         <SplitPane
           className="splitpane"
@@ -361,7 +288,22 @@ var App = React.createClass({
             key={this.state.parser}
             focusPath={this.state.focusPath}
             ast={this.state.ast}
-          />
+          >
+            <Toolbar
+              forking={this.state.forking}
+              saving={this.state.saving}
+              onSave={this._onSave}
+              onFork={this._onFork}
+              onParserChange={this._onParserChange}
+              canSave={
+                this.state.content !== initialCode && !revision ||
+                revision && revision.get('code') !== this.state.content
+              }
+              canFork={!!revision}
+              parserName={this.state.parser}
+              parserVersion={this._getParser().version}
+            />
+          </ASTOutput>
         </SplitPane>
       </PasteDropTarget>
     );
