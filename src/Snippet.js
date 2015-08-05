@@ -29,7 +29,7 @@ function setInCache(snippet, revision,rev) {
   cacheEntry.snippet = snippet;
   cacheEntry[rev] = revision;
 }
-
+if (Parse) {
 var Snippet = Parse.Object.extend('Snippet', {
   fetchLatestRevision: function() {
     if (this._latestRevision) {
@@ -106,3 +106,4 @@ var Snippet = Parse.Object.extend('Snippet', {
 });
 
 module.exports = Snippet;
+}

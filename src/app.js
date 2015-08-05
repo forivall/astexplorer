@@ -316,7 +316,7 @@ function render(props) {
     document.getElementById('container')
   );
 }
-
+if (typeof Snippet === 'function') {
 Snippet.fetchFromURL().then(
   function(data) {
     render(data);
@@ -325,3 +325,6 @@ Snippet.fetchFromURL().then(
     render({error: 'Failed to fetch revision: ' + error.message});
   }
 );
+} else {
+  render({});
+}
