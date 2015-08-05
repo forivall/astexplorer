@@ -17,6 +17,7 @@ var Toolbar = require('./Toolbar');
 
 var getFocusPath = require('./getFocusPath');
 var babylon = require('babylon');
+var babelGeneration = require('babel-core/lib/generation');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
@@ -41,6 +42,7 @@ var App = React.createClass({
       ast: null,
       focusPath: [],
       content: revision && revision.get('code') || initialCode,
+      regeneratedContent: "",
       snippet: snippet,
       revision: revision,
       parser: 'babylon',
@@ -157,6 +159,17 @@ var App = React.createClass({
     });
   },
 
+  generate: function(ast, code) {
+    return new Promise((resolve, reject) => {
+      try {
+        resolve(new babelGeneration.CodeGenerator(ast, {
+        }, code).generate())
+      } catch(e) {
+        reject(e);
+      }
+    })
+  },
+
   onContentChange: function(data) {
     var content = data.value;
     var cursor = data.cursor;
@@ -165,14 +178,27 @@ var App = React.createClass({
     }
 
     this.parse(content).then(
-      ast => this.setState({
-        content: content,
-        ast: ast,
-        focusPath: cursor ? getFocusPath(ast, cursor): [],
-        error: null
-      }),
+      ast => {
+        this.setState({
+          content: content,
+          ast: ast,
+          focusPath: cursor ? getFocusPath(ast, cursor): [],
+          error: null
+        });
+        return this.generate(ast, content);
+      },
       e => this.setState({
-        error: 'Syntax error: ' + e.message,
+        error: 'Parse error: ' + e.message,
+        content: content,
+      })
+    ).then(
+      generated => {
+        this.setState({
+          regeneratedContent: generated.code
+        });
+      },
+      e => this.setState({
+        error: 'Generate error: ' + e.message,
         content: content,
       })
     );
@@ -278,12 +304,21 @@ var App = React.createClass({
         <SplitPane
           className="splitpane"
           onResize={this._onResize}>
-          <Editor
-            ref="editor"
-            value={this.state.content}
-            onContentChange={this.onContentChange}
-            onActivity={this.onActivity}
-          />
+          <SplitPane
+            className="splitpane"
+            layout="row"
+            onResize={this._onResize}>
+            <Editor
+              ref="editor"
+              value={this.state.content}
+              onContentChange={this.onContentChange}
+              onActivity={this.onActivity}
+            />
+            <Editor
+              ref="regeneratedEditor"
+              value={this.state.regeneratedContent}
+            />
+          </SplitPane>
           <ASTOutput
             key={this.state.parser}
             focusPath={this.state.focusPath}

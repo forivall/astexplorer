@@ -12,7 +12,7 @@ var SplitPane = React.createClass({
   getInitialState: function() {
     return {
       dividerPosition: 50,
-      horizResize: true
+      horizResize: (this.props.layout !== 'row')
     };
   },
 
