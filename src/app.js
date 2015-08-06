@@ -17,7 +17,8 @@ var Toolbar = require('./Toolbar');
 
 var getFocusPath = require('./getFocusPath');
 var babylon = require('babylon');
-var babelGeneration = require('babel-core/lib/generation');
+// var babelGeneration = require('babel-core/lib/generation');
+var tacoscriptGenJs = require('tacoscript-core/lib/gen-js');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
@@ -162,7 +163,7 @@ var App = React.createClass({
   generate: function(ast, code) {
     return new Promise((resolve, reject) => {
       try {
-        resolve(new babelGeneration.CodeGenerator(ast, {
+        resolve(new tacoscriptGenJs.CodeGenerator(ast, {
         }, code).generate())
       } catch(e) {
         reject(e);
@@ -187,22 +188,28 @@ var App = React.createClass({
         });
         return this.generate(ast, content);
       },
-      e => this.setState({
-        error: 'Parse error: ' + e.message,
-        content: content,
-      })
+      e => {
+        console.error(e);
+        return this.setState({
+          error: 'Parse error: ' + e.message,
+          content: content,
+        });
+      }
     ).then(
       generated => {
         this.setState({
           regeneratedContent: generated.code
         });
       },
-      e => this.setState({
-        error: 'Generate error: ' + e.message,
-        content: content,
-      })
+      e => {
+        console.error(e);
+        return this.setState({
+          error: 'Generate error: ' + e.message,
+          content: content,
+        });
+      }
     );
-  },
+      },
 
   onActivity: function(cursorPos) {
     this.setState({
