@@ -16,19 +16,19 @@ var SplitPane = require('./SplitPane');
 var Toolbar = require('./Toolbar');
 
 var getFocusPath = require('./getFocusPath');
-var babylon = require('babylon');
 // var babelGeneration = require('babel-core/lib/generation');
 var tacoscriptGenJs = require('tacoscript-core/lib/gen-js');
+var tacoscriptParseJs = require('tacoscript-core/lib/helpers/parse-js');
 var fs = require('fs');
 var keypress = require('keypress').keypress;
 
-var initialCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
+// var initialCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
+var initialCode = fs.readFileSync(require.resolve('everything.js/es2015-script'), 'utf8');
+// var initialCode = fs.readFileSync(__dirname + '/../node_modules/everything.js/test/parsing.js', 'utf8');
 
 function updateHashWithIDAndRevision(id, rev) {
   global.location.hash = '/' + id + (rev && rev !== 0 ? '/' + rev : '');
 }
-
-var attachTokens = require('tacoscript-core/lib/helpers/attach-tokens')['default'];
 
 var App = React.createClass({
   getInitialState: function() {
@@ -128,31 +128,7 @@ var App = React.createClass({
     return new Promise((resolve, reject) => {
       if (parser === 'babylon') {
         try {
-          resolve(
-            attachTokens(
-              babylon.parse(code, {
-                range: true,
-                sourceType: 'module',
-                allowImportExportEverywhere: true,
-                allowReturnOutsideFunction:  true,
-                allowHashBang:               true,
-                ecmaVersion:                 7,
-                strictMode:                  false,
-                locations:                   true,
-                ranges:                      true,
-                features: {
-                  "es7.decorators": true,
-                  "es7.comprehensions": true,
-                  "es7.asyncFunctions": true,
-                  "es7.exportExtensions": true,
-                  "es7.functionBind": true
-                },
-                plugins: { jsx: true, flow: true }
-              }),
-              code, {
-                whitespace: true
-              })
-          );
+          resolve(tacoscriptParseJs(code));
         } catch(e) {
           reject(e);
         }
@@ -292,7 +268,7 @@ var App = React.createClass({
   },
 
   _getParser: function() {
-    return this.state.parser === 'esprima-fb' ? {} : babylon;
+    return this.state.parser === 'esprima-fb' ? {} : tacoscriptParseJs;
   },
 
   render: function() {
