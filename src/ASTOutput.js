@@ -82,6 +82,7 @@ export default React.createClass({
             JSON
           </button>
         </div>
+        {this.props.children}
         {output}
       </div>
     );
