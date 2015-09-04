@@ -64,6 +64,7 @@ export default React.createClass({
 
     return (
       <div className="output highlight">
+        {/*
         <div className="toolbar">
           <button
             onClick={this._changeOutput}
@@ -82,6 +83,7 @@ export default React.createClass({
             JSON
           </button>
         </div>
+        */}
         {this.props.children}
         {output}
       </div>

@@ -1,15 +1,17 @@
-import esprima from './esprima';
-import espree from './espree';
-import acorn from './acorn';
-import babylon from './babylon';
-import recast from './recast';
+// import esprima from './esprima';
+// import espree from './espree';
+// import acorn from './acorn';
+// import babylon from './babylon';
+// import recast from './recast';
+import tacoscriptParse from './tacoscript';
 
 export var parsers = [
-  esprima,
-  espree,
-  acorn,
-  babylon,
-  recast,
+  // esprima,
+  // espree,
+  // acorn,
+  // babylon,
+  // recast,
+  tacoscriptParse,
 ];
 
 export function getDefaultParser() {

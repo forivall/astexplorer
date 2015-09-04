@@ -414,6 +414,7 @@ var App = React.createClass({
         }
         onText={this._onDropText}
         onError={this._onDropError}>
+        {/*
         <Toolbar
           forking={this.state.forking}
           saving={this.state.saving}
@@ -427,6 +428,7 @@ var App = React.createClass({
           transformer={this.state.transformer}
           transformPanelIsEnabled={this.state.showTransformPanel}
         />
+        */}
         {this.state.error ? <ErrorMessage message={this.state.error} /> : null}
         <SplitPane
           className="splitpane-content"

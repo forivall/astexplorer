@@ -43,7 +43,7 @@ export default class Toolbar {
 
     return (
       <div id="Toolbar">
-        <h1>JS AST Explorer</h1>
+        {/*<h1>JS AST Explorer</h1>*/}
         <button
           type="button"
           disabled={
@@ -81,6 +81,7 @@ export default class Toolbar {
         <ParserButton {...this.props} />
         <ParserSettingsButton {...this.props} />
         <TransformButton {...this.props} />
+	{/*
         <a
           target="_blank"
           href="https://github.com/fkling/esprima_ast_explorer#features">
@@ -98,6 +99,7 @@ export default class Toolbar {
           Parser: {parserInfo}<br />
           {transformerInfo}
         </div>
+        */}
       </div>
     );
   }
