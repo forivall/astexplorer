@@ -464,6 +464,7 @@ var App = React.createClass({
               transformer={this.state.transformer}
               transformCode={this.state.currentTransformCode}
               code={this.state.currentCode}
+              ast={this.state.ast}
             />
           </SplitPane> : null}
         </SplitPane>

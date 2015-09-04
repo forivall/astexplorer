@@ -6,7 +6,7 @@ import SettingsRenderer from './utils/SettingsRenderer';
 
 import tacoscriptParseJs from 'tacoscript-core/lib/helpers/parse-js';
 
-const ID = 'tacoscriptParse';
+const ID = 'tacoscript-js';
 
 export default {
   name: ID,

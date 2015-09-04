@@ -1,9 +1,11 @@
-import jscodeshift from './jscodeshift';
-import babel from './babel';
+// import jscodeshift from './jscodeshift';
+// import babel from './babel';
+import tacoscriptGenJs from './tacoscript-js';
 
 export let transformers = [
-  jscodeshift,
-  babel,
+  // jscodeshift,
+  // babel,
+  tacoscriptGenJs,
 ];
 
 let byID = transformers.reduce(

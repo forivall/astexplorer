@@ -25,8 +25,14 @@ export default class TransformOutput extends React.Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (this.props.transformCode !== nextProps.transformCode ||
-        this.props.code !== nextProps.code) {
+    var propsChanged = false;
+    for (let prop of (nextProps.transformer.transformProps: Array)) {
+      if (this.props[prop] !== nextProps[prop]) {
+        propsChanged = true;
+        break;
+      }
+    }
+    if (propsChanged) {
       if (console.clear) {
         console.clear();
       }

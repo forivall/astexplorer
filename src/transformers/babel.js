@@ -36,6 +36,7 @@ export default {
   defaultParser: {
     id: 'babylon',
   },
+  transformProps: ['transformCode', 'code'],
   defaultTransform,
   transform,
 };

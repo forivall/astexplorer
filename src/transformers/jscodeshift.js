@@ -38,6 +38,7 @@ export default {
   defaultParser: {
     id: 'recast',
   },
+  transformProps: ['transformCode', 'code'],
   displayName: ID,
   defaultTransform,
   transform,
