@@ -18,7 +18,8 @@ import {getDefaultParser, getParser} from './parsers';
 
 var fs = require('fs');
 
-var defaultCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
+var defaultCode = fs.readFileSync(require.resolve('everything.js/es2015-script'), 'utf8');
+// var defaultCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
 
 function updateHashWithIDAndRevision(id, rev) {
   global.location.hash = '/' + id + (rev && rev !== 0 ? '/' + rev : '');
@@ -32,7 +33,8 @@ var App = React.createClass({
       throw Error('Must set both, snippet and revision');
     }
     const initialCode = revision && revision.get('code') || defaultCode;
-    const transformerID = revision && revision.get('toolID');
+    // const transformerID = revision && revision.get('toolID');
+    const transformerID = 'tacoscript-js';
     let transformer = transformerID && getTransformerByID(transformerID);
     const initialTransformCode = revision && revision.get('transform');
     if (initialTransformCode && !transformer) {
@@ -211,11 +213,13 @@ var App = React.createClass({
         focusPath: cursor ? getFocusPath(ast, cursor, this.state.parser) : [],
         editorError: null,
       }),
-      error => this.setState({
-        ast: null,
-        currentCode: code,
-        editorError: error,
-      })
+      error => {
+        console.error(error);
+        return this.setState({
+          error: 'Parse error: ' + error.message,
+          content: content,
+        });
+      }
     );
   },
 
