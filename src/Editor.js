@@ -24,6 +24,10 @@ export default class Editor {
     return this.codeMirror && this.codeMirror.getValue();
   }
 
+  setValue(value) {
+    return this.codeMirror && this.codeMirror.setValue(value);
+  }
+
   _setError(error) {
     if (this.codeMirror) {
       if (this.props.error) {
@@ -46,7 +50,7 @@ export default class Editor {
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.defaultValue !== this.props.defaultValue) {
-      this.codeMirror.setValue(nextProps.defaultValue);
+      this.setValue(nextProps.defaultValue);
     }
     this._setError(nextProps.error);
   }
@@ -61,7 +65,7 @@ export default class Editor {
     this.codeMirror = CodeMirror( // eslint-disable-line new-cap
       React.findDOMNode(this.refs.container),
       {
-        value: this.props.defaultValue,
+        value: this.props.defaultValue || '',
         lineNumbers: this.props.lineNumbers,
         readOnly: this.props.readOnly,
       }
