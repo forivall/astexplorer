@@ -46,6 +46,7 @@ var App = React.createClass({
       regeneratedContent: "",
       snippet: snippet,
       revision: revision,
+      generate: true,
       parser: 'babylon',
     };
   },
@@ -153,16 +154,19 @@ var App = React.createClass({
     if (this.state.ast && this.state.content === content) {
       return;
     }
-
+    var ast = null;
     this.parse(content).then(
-      ast => {
+      ast_ => {
+        ast = ast_;
         this.setState({
           content: content,
-          ast: ast,
-          focusPath: cursor ? getFocusPath(ast, cursor): [],
+          // ast: ast,
+          // focusPath: cursor ? getFocusPath(ast, cursor): [],
           error: null
         });
-        return this.generate(ast, content);
+        if (this.state.generate) {
+          return this.generate(ast, content);
+        }
       },
       e => {
         console.error(e);
@@ -173,7 +177,10 @@ var App = React.createClass({
       }
     ).then(
       generated => {
+        if (!generated) { return; }
         this.setState({
+          ast: ast,
+          focusPath: cursor ? getFocusPath(ast, cursor): [],
           regeneratedContent: generated.code
         });
       },
