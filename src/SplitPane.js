@@ -1,28 +1,38 @@
-"use strict";
+import React from 'react';
 
-var React = require('react/addons');
+var baseStyleHorizontal = {
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  boxSizing: 'border-box',
+};
 
-var cloneWithProps = React.addons.cloneWithProps;
-var classNames = require('classnames');
+var baseStyleVertical = {
+  position: 'absolute',
+  left: 0,
+  right: 0,
+  boxSizing: 'border-box',
+};
 
 /**
  * Creates a left-right split pane inside its container.
  */
-var SplitPane = React.createClass({
+export default React.createClass({
   getInitialState: function() {
     return {
       dividerPosition: 50,
-      horizResize: (this.props.layout !== 'row')
+      vertical: this.props.vertical,
     };
   },
 
   _onMouseDown: function() {
-    var width = global.innerWidth;
-    var height = global.innerHeight;
-    global.document.body.style.cursor = this.state.horizResize ? 'col-resize' : 'row-resize';
+    var vertical = this.state.vertical;
+    var max = vertical ? global.innerHeight : global.innerWidth;
+    global.document.body.style.cursor = vertical ? 'row-resize' : 'col-resize';
     var moveHandler = function(event) {
       event.preventDefault();
-      this.setState({dividerPosition: (this.state.horizResize ? (event.pageX / width) : (event.pageY / height)) * 100});
+      this.setState({
+        dividerPosition: ((vertical ? event.pageY : event.pageX) / max) * 100});
     }.bind(this);
     var upHandler = function() {
       document.removeEventListener('mousemove', moveHandler);
@@ -39,85 +49,89 @@ var SplitPane = React.createClass({
   },
 
   _onDoubleClick: function() {
-    this.setState({horizResize: !this.state.horizResize});
+    this.setState({vertical: !this.state.vertical});
   },
 
   render: function() {
+    var children = this.props.children;
     var dividerPos = this.state.dividerPosition;
-    if (this.state.horizResize) {
-      var baseStyle = {
-        position: 'absolute',
-        top: 0,
-        bottom: 0,
-        boxSizing: 'border-box'
-      };
-      var styleFirst = {
-        ...baseStyle,
-        left: 0,
-        width: dividerPos + '%',
-        paddingRight: 3
-      };
-      var styleSecond = {
-        ...baseStyle,
-        right: 0,
-        width: (100 - dividerPos) + '%',
-        paddingLeft: 3
-      };
-      var dividerStyle = {
-        ...baseStyle,
-        left: dividerPos + '%',
-        width: 5,
-        marginLeft: -2.5,
-        zIndex: 100
-      };
-    } else {
-      var baseStyle = {
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        boxSizing: 'border-box'
-      };
-      var styleFirst = {
-        ...baseStyle,
+    var styleA;
+    var styleB;
+    var dividerStyle;
+
+    if (!Array.isArray(children) || children.filter(x => x).length !== 2) {
+      return (
+        <div className={this.props.className}>
+          <div style={{position: 'absolute', top: 0, bottom: 0, left: 0, right: 0}}>
+            {this.props.children}
+          </div>
+        </div>
+      );
+    }
+
+    if (this.state.vertical) {
+      // top
+      styleA = {
+        ...baseStyleVertical,
         top: 0,
         height: dividerPos + '%',
-        paddingBottom: 3
-      };
-      var styleSecond = {
-        ...baseStyle,
+        paddingBottom: 3,
+      };horizResize
+      // bottom
+      styleB = {
+        ...baseStyleVertical,
         bottom: 0,
         height: (100 - dividerPos) + '%',
-        paddingTop: 3
+        paddingTop: 3,
       };
-      var dividerStyle = {
-        ...baseStyle,
+      dividerStyle = {
+        ...baseStyleVertical,
         top: dividerPos + '%',
         height: 5,
         marginTop: -2.5,
-        zIndex: 100
+        zIndex: 100,
+      };
+    } else {
+      // left
+      styleA = {
+        ...baseStyleHorizontal,
+        left: 0,
+        width: dividerPos + '%',
+        paddingRight: 3,
+      };
+      // right
+      styleB = {
+        ...baseStyleHorizontal,
+        right: 0,
+        width: (100 - dividerPos) + '%',
+        paddingLeft: 3,
+      };
+      dividerStyle = {
+        ...baseStyleHorizontal,
+        left: dividerPos + '%',
+        width: 5,
+        marginLeft: -2.5,
+        zIndex: 100,
       };
     }
 
     return (
       <div className={this.props.className}>
-        <div style={styleFirst}>
+        <div style={styleA}>
           {this.props.children[0]}
         </div>
         <div
-          className={classNames("splitpane-divider", {
-            "splitpane-divider-col": this.state.horizResize,
-            "splitpane-divider-row": !this.state.horizResize
-          })}
+          className={
+            'splitpane-divider' + (this.state.vertical ? ' vertical' : '')
+          }
           onMouseDown={this._onMouseDown}
           onDoubleClick={this._onDoubleClick}
           style={dividerStyle}
         />
-        <div style={styleSecond}>
+        <div style={styleB}>
           {this.props.children[1]}
         </div>
       </div>
     );
-  }
+  },
 });
-
-module.exports = SplitPane;

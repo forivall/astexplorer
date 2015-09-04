@@ -1,16 +1,10 @@
-/**
- * @jsx React.DOM
- */
-"use strict";
+import JSONEditor from './JSONEditor';
+import Element from './Element';
+import PubSub from 'pubsub-js';
+import React from 'react/addons';
+import cx from 'classnames';
 
-var JSONEditor = require('./JSONEditor');
-var Element = require('./Element');
-var PubSub = require('pubsub-js');
-var React = require('react/addons');
-
-var cx = React.addons.classSet;
-
-var ASTOutput = React.createClass({
+export default React.createClass({
   propTypes: {
     ast: React.PropTypes.object,
     focusPath: React.PropTypes.array,
@@ -18,14 +12,15 @@ var ASTOutput = React.createClass({
 
   getInitialState: function() {
     return {
-      output: 'tree'
+      output: 'tree',
     };
   },
 
   shouldComponentUpdate: function(nextProps, nextState) {
     var newFocusPath = nextProps.focusPath;
 
-    return this.props.ast !== nextProps.ast ||
+    return this.props.editorError !== nextProps.editorError ||
+      this.props.ast !== nextProps.ast ||
       this.props.focusPath.length !== newFocusPath.length ||
       this.props.focusPath.some((obj, i) => obj !== newFocusPath[i]) ||
       this.state.output !== nextState.output;
@@ -60,16 +55,21 @@ var ASTOutput = React.createClass({
             />;
           break;
       }
+    } else if (this.props.editorError) {
+      output =
+        <div style={{padding: 20}}>
+          {this.props.editorError.message}
+        </div>;
     }
 
     return (
-      <div id="output" className="highlight">
+      <div className="output highlight">
         {/*<div className="toolbar">
           <button
             onClick={this._changeOutput}
             value="tree"
             className={cx({
-              active: this.state.output === 'tree'
+              active: this.state.output === 'tree',
             })}>
             Tree
           </button>
@@ -77,7 +77,7 @@ var ASTOutput = React.createClass({
             onClick={this._changeOutput}
             value="json"
             className={cx({
-              active: this.state.output === 'json'
+              active: this.state.output === 'json',
             })}>
             JSON
           </button>
@@ -87,7 +87,5 @@ var ASTOutput = React.createClass({
         {output}
       </div>
     );
-  }
+  },
 });
-
-module.exports = ASTOutput;

@@ -1,7 +1,2 @@
-"use strict";
-var Parse = require('./Parse');
-if (typeof Parse === 'function') {
-var SnippetRevision = Parse.Object.extend('SnippetRevision');
-
-module.exports = SnippetRevision;
-}
+import Parse from './Parse';
+export default ((typeof Parse === 'function') ? Parse.Object.extend('SnippetRevision') : void 0);

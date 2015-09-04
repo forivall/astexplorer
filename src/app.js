@@ -1,30 +1,28 @@
-/**
- * @jsx React.DOM
- */
-"use strict";
+import ASTOutput from './ASTOutput';
+import Editor from './Editor';
+import ErrorMessage from './ErrorMessage';
+import PasteDropTarget from './PasteDropTarget';
+import PubSub from 'pubsub-js';
+import React from 'react';
+import Snippet from './Snippet';
+import SplitPane from './SplitPane';
+import Toolbar from './Toolbar';
+import TransformOutput from './TransformOutput';
+import SettingsDialog from './SettingsDialog';
+import * as LocalStorage from './LocalStorage';
 
-require('./Object.es7.shim');
+import getFocusPath from './getFocusPath';
+import {keypress} from 'keypress';
+import * as parsers from './parsers';
 
-var ASTOutput = require('./ASTOutput');
-var Editor = require('./Editor');
-var ErrorMessage = require('./ErrorMessage');
-var PasteDropTarget = require('./PasteDropTarget');
-var PubSub = require('pubsub-js');
-var React = require('react/addons');
-var Snippet = require('./Snippet');
-var SplitPane = require('./SplitPane');
-var Toolbar = require('./Toolbar');
-
-var getFocusPath = require('./getFocusPath');
-// var babelGeneration = require('babel-core/lib/generation');
 var tacoscriptGenJs = require('tacoscript-core/lib/gen-js');
 var tacoscriptParseJs = require('tacoscript-core/lib/helpers/parse-js');
 var fs = require('fs');
-var keypress = require('keypress').keypress;
 
-// var initialCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
-var initialCode = fs.readFileSync(require.resolve('everything.js/es2015-script'), 'utf8');
-// var initialCode = fs.readFileSync(__dirname + '/../node_modules/everything.js/test/parsing.js', 'utf8');
+var defaultCode = fs.readFileSync(require.resolve('everything.js/es2015-script'), 'utf8');
+// var defaultCode = fs.readFileSync(__dirname + '/codeExample.txt', 'utf8');
+var defaultTransform =
+  fs.readFileSync(__dirname + '/transformExample.txt', 'utf8');
 
 function updateHashWithIDAndRevision(id, rev) {
   global.location.hash = '/' + id + (rev && rev !== 0 ? '/' + rev : '');
@@ -37,14 +35,19 @@ var App = React.createClass({
     if ((snippet && !revision) || (!snippet && revision)) {
       throw Error('Must set both, snippet and revision');
     }
+    const initialCode = revision && revision.get('code') || defaultCode;
+    const initialTransform =
+      revision && revision.get('transform') || defaultTransform;
+    const showTransform = defaultTransform !== initialTransform;
     return {
       forking: false,
       saving: false,
       ast: null,
       focusPath: [],
-      content: revision && revision.get('code') || initialCode,
-      regeneratedContent: "",
+      ...this._setCode(initialCode),
+      ...this._setTransform(initialTransform),
       snippet: snippet,
+      showTransformPanel: defaultTransform !== initialTransform,
       revision: revision,
       generate: true,
       parser: 'babylon',
@@ -55,22 +58,26 @@ var App = React.createClass({
     if (this.props.error) {
       this._showError(this.props.error);
     }
-    global.onhashchange = function() {
+    global.onhashchange = () => {
       if (!this.state.saving || !this.state.forking) {
         Snippet.fetchFromURL().then(
-          function(data) {
+          data => {
             if (data) {
               this._setRevision(data.snippet, data.revision);
             } else {
               this._clearRevision();
             }
-          }.bind(this),
-          function(error) {
-            this._showError('Failed to fetch revision: ' + error.message);
-          }.bind(this)
+          },
+          error => this._showError('Failed to fetch revision: ' + error.message)
         );
       }
-    }.bind(this);
+    };
+
+    global.onbeforeunload = () => {
+      if (this.state.initialTransform !== this.state.currentTransform) {
+        return 'You have unsaved transform code. Do you really want to leave?';
+      }
+    };
 
     var listener = new keypress.Listener();
     listener.simple_combo('meta s', (event) => {
@@ -86,36 +93,71 @@ var App = React.createClass({
       this._onFork();
     });
 
-    PubSub.subscribe('HIGHLIGHT', function(_, astNode) {
-      PubSub.publish('CM.HIGHLIGHT', astNode.range);
-    });
-    PubSub.subscribe('CLEAR_HIGHLIGHT', function(_, astNode) {
-      PubSub.publish('CM.CLEAR_HIGHLIGHT', astNode && astNode.range);
-    });
+    PubSub.subscribe(
+      'HIGHLIGHT',
+      (_, astNode) => {
+        let range = parsers[this.state.parser].nodeToRange(astNode);
+        if (range) {
+          PubSub.publish('CM.HIGHLIGHT', range);
+        }
+      }
+    );
+    PubSub.subscribe(
+      'CLEAR_HIGHLIGHT',
+      (_, astNode) => PubSub.publish(
+        'CM.CLEAR_HIGHLIGHT',
+        astNode && parsers[this.state.parser].nodeToRange(astNode)
+      )
+   );
+  },
+
+  _setCode(code) {
+    return {initialCode: code, currentCode: code};
+  },
+
+  _setTransform(transform) {
+    return {initialTransform: transform, currentTransform: transform};
   },
 
   _setRevision: function(snippet, revision) {
     if (!snippet || !revision) {
       this.setError('Something went wrong fetching the revision. Try to refresh!');
     }
+
+    const code = revision.get('code') || defaultCode;
+    const transform = revision.get('transform') || defaultTransform;
+
+    const update = data => { // eslint-disable-line no-shadow
+      this.setState({
+        ...data,
+        snippet,
+        revision,
+        ...this._setCode(code),
+        ...this._setTransform(transform),
+        focusPath: [],
+      });
+    };
+
     if (!this.state.snippet ||
         snippet.id !== this.state.snippet.id ||
-        revision.id !== this.state.revision.id ||
-        revision.get('code') !== this.state.revision.get('code')) {
-      this.setState({
-        snippet: snippet,
-        revision: revision,
-        content: revision.get('code'),
-        focusPath: []
-      });
+        revision.id !== this.state.revision.id) {
+      if (this.state.revision && code !== this.state.revision.get('code')) {
+        this.parse(code).then(
+          ast => update({ast, editorError: null}),
+          error => update({ast: null, editorError: error})
+        );
+      } else {
+        update({ast: this.state.ast, editorError: null});
+      }
     }
   },
 
   _clearRevision: function() {
-    this.parse(initialCode).then(ast => this.setState({
+    this.parse(defaultCode).then(ast => this.setState({
       ast: ast,
       focusPath: [],
-      content: initialCode,
+      ...this._setCode(defaultCode),
+      ...this._setTransform(defaultTransform),
       snippet: null,
       revision: null,
     }));
@@ -125,16 +167,8 @@ var App = React.createClass({
     if (!parser) {
       parser = this.state.parser;
     }
-
-    return new Promise((resolve, reject) => {
-      if (parser === 'babylon') {
-        try {
-          resolve(tacoscriptParseJs(code));
-        } catch(e) {
-          reject(e);
-        }
-      }
-    });
+    return parsers[parser]
+      .parse(code);
   },
 
   generate: function(ast, code) {
@@ -148,74 +182,65 @@ var App = React.createClass({
     })
   },
 
-  onContentChange: function(data) {
-    var content = data.value;
-    var cursor = data.cursor;
-    if (this.state.ast && this.state.content === content) {
+  onContentChange: function({value: code, cursor}) {
+    if (this.state.ast && this.state.currentCode === code) {
       return;
     }
-    var ast = null;
-    this.parse(content).then(
-      ast_ => {
-        ast = ast_;
-        this.setState({
-          content: content,
-          // ast: ast,
-          // focusPath: cursor ? getFocusPath(ast, cursor): [],
-          error: null
-        });
-        if (this.state.generate) {
-          return this.generate(ast, content);
-        }
-      },
-      e => {
-        console.error(e);
+
+    this.parse(code).then(
+      ast => this.setState({
+        ast: ast,
+        currentCode: code,
+        focusPath: cursor ? getFocusPath(ast, cursor, this.state.parser) : [],
+        editorError: null,
+      }),
+      error => {
+        console.error(error);
         return this.setState({
-          error: 'Parse error: ' + e.message,
-          content: content,
-        });
-      }
-    ).then(
-      generated => {
-        if (!generated) { return; }
-        this.setState({
-          ast: ast,
-          focusPath: cursor ? getFocusPath(ast, cursor): [],
-          regeneratedContent: generated.code
-        });
-      },
-      e => {
-        console.error(e);
-        return this.setState({
-          error: 'Generate error: ' + e.message,
+          error: 'Parse error: ' + error.message,
           content: content,
         });
       }
     );
       },
 
-  onActivity: function(cursorPos) {
+  onTransformContentChange: function({value: transform}) {
     this.setState({
-      focusPath: getFocusPath(this.state.ast, cursorPos)
+      currentTransform: transform,
     });
+  },
+
+  onActivity: function(cursorPos) {
+    if (this.state.ast) {
+      this.setState({
+        focusPath: getFocusPath(this.state.ast, cursorPos, this.state.parser),
+      });
+    }
   },
 
   _showError: function(msg) {
     this.setState({error: msg});
-    setTimeout(function() {
+    setTimeout(() => {
       if (msg === this.state.error) {
         this.setState({error: false});
       }
-    }.bind(this), 3000);
+    }, 3000);
   },
 
   _save: function(fork) {
     var snippet = !fork && this.state.snippet || new Snippet();
     var code = this.refs.editor.getValue();
-    if (snippet.get('code') === code) return;
+    var transform = this.refs.transformEditor &&
+      this.refs.transformEditor.getValue();
+    if (code === defaultCode) {
+      code = '';
+    }
+    if (!transform || transform === defaultTransform) {
+      transform = '';
+    }
     this.setState({saving: !fork, forking: fork});
-    snippet.createNewRevision({code: code}).then(
-      function(response) {
+    snippet.createNewRevision({code, transform}).then(
+      response => {
         if (response) {
           updateHashWithIDAndRevision(snippet.id, response.revisionNumber);
         }
@@ -223,24 +248,30 @@ var App = React.createClass({
           saving: false,
           forking: false,
         });
-      }.bind(this),
-      function(snippet, error) {
+      },
+      (_, error) => {
         this._showError('Could not save: ' + error.message);
         this.setState({saving: false, forking: false});
-      }.bind(this)
+      }
     );
   },
 
   _onSave: function() {
-    var revision = this.state.revision;
-    if (this.state.content !== initialCode && !revision ||
-        revision && revision.get('code') !== this.state.content) {
+    const {revision} = this.state;
+    var isNewRevision = !revision &&
+      (this.state.currentCode !== defaultCode ||
+       this.state.currentTransform !== defaultTransform);
+    var isModified = revision &&
+       (this.state.initalCode !== this.state.currentCode ||
+        this.state.initialTransform !== this.state.currentTransform);
+
+    if (isNewRevision || isModified) {
       this._save();
     }
   },
 
   _onFork: function() {
-    if (!!this.state.revision) {
+    if (this.state.revision) {
       this._save(true);
     }
   },
@@ -250,36 +281,92 @@ var App = React.createClass({
   },
 
   _onDropText: function(type, event, text) {
-    this.onContentChange({value: text});
+    this.parse(text).then(
+      ast => this.setState({
+        ...this._setCode(text),
+        ast: ast,
+        focusPath: [],
+        editorError: null,
+      }),
+      error => this.setState({
+        ...this._setCode(text),
+        ast: null,
+        editorError: error,
+      })
+    );
   },
 
   _onDropError: function(type, event, msg) {
     this._showError(msg);
   },
 
-  _onParserChange: function() {
-    var parser = this.state.parser === 'esprima-fb' ? 'babylon' : 'esprima-fb';
-
-    this.parse(this.state.content, parser).then(
+  _onParserChange: function(parser) {
+    LocalStorage.setParser(parser);
+    this.parse(this.state.currentCode, parser).then(
       ast => this.setState({
         ast: ast,
         parser: parser,
         focusPath: [],
-        error: null
+        editorError: null,
       }),
-      e => this.setState({
-        error: 'Syntax error: ' + e.message,
+      error => this.setState({
+        ast: null,
+        editorError: error,
         parser: parser,
       })
     );
   },
 
-  _getParser: function() {
-    return this.state.parser === 'esprima-fb' ? {} : tacoscriptParseJs;
+  _onSettingsChange: function() {
+    this._onParserChange(this.state.parser);
+  },
+
+  _getParserVersion: function() {
+    return parsers[this.state.parser].version;
+  },
+
+  _onToggleTransform: function() {
+    const showTransformPanel = !this.state.showTransformPanel;
+    // Switch to Babel if we open the transform, since jscodeshift uses Babel
+    // as well
+    const parser =
+      this.state.parser !== 'recast' && showTransformPanel ?
+      'recast' :
+      this.state.parser;
+
+    if (parser !== this.state.parser) {
+      this.parse(this.state.currentCode, parser).then(
+        ast => this.setState({
+          ast,
+          parser,
+          focusPath: [],
+          editorError: null,
+          showTransformPanel,
+        }),
+        error => this.setState({
+          ast: null,
+          editError: error,
+          parser,
+          showTransformPanel,
+        })
+      );
+    } else {
+      this.setState({
+        showTransformPanel,
+        parser,
+      });
+    }
+    this._onResize();
   },
 
   render: function() {
-    var revision = this.state.revision;
+    const revision = this.state.revision;
+    const revisionCode = revision && revision.get('code') || defaultCode;
+    const revisionTransform = revision && revision.get('transform') ||
+      defaultTransform;
+    const canSave = revisionCode !== this.state.currentCode ||
+      revisionTransform !== this.state.currentTransform;
+
     return (
       <PasteDropTarget
         className="dropTarget"
@@ -290,49 +377,65 @@ var App = React.createClass({
         }
         onText={this._onDropText}
         onError={this._onDropError}>
+        {/*
+        <Toolbar
+          forking={this.state.forking}
+          saving={this.state.saving}
+          onSave={this._onSave}
+          onFork={this._onFork}
+          onParserChange={this._onParserChange}
+          onToggleTransform={this._onToggleTransform}
+          canSave={canSave}
+          canFork={!!revision}
+          parserName={this.state.parser}
+          parserVersion={this._getParserVersion()}
+          transformPanelIsEnabled={this.state.showTransformPanel}
+        />
+        */}
         {this.state.error ? <ErrorMessage message={this.state.error} /> : null}
         <SplitPane
-          className="splitpane"
+          className="splitpane-content"
+          vertical={true}
           onResize={this._onResize}>
           <SplitPane
             className="splitpane"
-            layout="row"
             onResize={this._onResize}>
             <Editor
               ref="editor"
-              value={this.state.content}
+              defaultValue={this.state.initialCode}
+              error={this.state.editorError}
               onContentChange={this.onContentChange}
               onActivity={this.onActivity}
             />
-            <Editor
-              ref="regeneratedEditor"
-              value={this.state.regeneratedContent}
+            <ASTOutput
+              key={this.state.parser}
+              focusPath={this.state.focusPath}
+              ast={this.state.ast}
+              editorError={this.state.editorError}
             />
           </SplitPane>
-          <ASTOutput
-            key={this.state.parser}
-            focusPath={this.state.focusPath}
-            ast={this.state.ast}
-          >
-            <Toolbar
-              forking={this.state.forking}
-              saving={this.state.saving}
-              onSave={this._onSave}
-              onFork={this._onFork}
-              onParserChange={this._onParserChange}
-              canSave={
-                this.state.content !== initialCode && !revision ||
-                revision && revision.get('code') !== this.state.content
-              }
-              canFork={!!revision}
-              parserName={this.state.parser}
-              parserVersion={this._getParser().version}
+          {this.state.showTransformPanel ? <SplitPane
+            className="splitpane"
+            onResize={this._onResize}>
+            <Editor
+              ref="transformEditor"
+              highlight={false}
+              defaultValue={this.state.initialTransform}
+              onContentChange={this.onTransformContentChange}
             />
-          </ASTOutput>
+            <TransformOutput
+              transform={this.state.currentTransform}
+              code={this.state.currentCode}
+            />
+          </SplitPane> : null}
         </SplitPane>
+        <SettingsDialog
+          parserName={this.state.parser}
+          onChange={this._onSettingsChange}
+        />
       </PasteDropTarget>
     );
-  }
+  },
 });
 
 function render(props) {
@@ -343,12 +446,8 @@ function render(props) {
 }
 if (typeof Snippet === 'function') {
 Snippet.fetchFromURL().then(
-  function(data) {
-    render(data);
-  },
-  function(error) {
-    render({error: 'Failed to fetch revision: ' + error.message});
-  }
+  data => render(data),
+  error => render({error: 'Failed to fetch revision: ' + error.message})
 );
 } else {
   render({});

@@ -5,4 +5,4 @@ if (Parse) {
     '0L4YKtVRqey2vRG0hjemm9TKb4edjNBSnZXC5Lni'
   );
 }
-module.exports = Parse;
+export default Parse;

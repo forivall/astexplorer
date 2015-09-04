@@ -1,27 +1,19 @@
-/**
- * @jsx React.DOM
- */
+import Element from './Element';
+import React from 'react';
 
-var React = require('react/addons');
-var BLACKLIST = require('./NodeBlacklist');
+export default class PropertyList {
+  static defaultProps = {
+    object: {},
+    deepOpen: false,
+  };
 
-var PropertyList = React.createClass({
-  getDefaultProps: function() {
-    return {
-      object: {},
-      deepOpen: false
-    };
-  },
-
-  render: function() {
-    var Element = require('./Element');
+  render() {
     var focusPath = this.props.focusPath;
     var level = this.props.level;
 
     var properties = Object.keys(this.props.object).map(key => {
       var v = this.props.object[key];
-      if (BLACKLIST[key]) return;
-      return (
+      return ( // eslint-disable-line consistent-return
         <Element
           key={key}
           name={key}
@@ -34,6 +26,4 @@ var PropertyList = React.createClass({
     });
     return <ul className="value-body">{properties}</ul>;
   }
-});
-
-module.exports = PropertyList;
+}

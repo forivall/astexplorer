@@ -1,23 +1,31 @@
-/**
- * @jsx React.DOM
- */
-"use strict";
+import React from 'react';
+import cx from 'classnames';
+import ParserButton from './ParserButton';
+import ParserSettingsButton from './ParserSettingsButton';
+import * as parsers from './parsers';
 
-var React = require('react/addons');
-var cx = React.addons.classSet;
-
-var Toolbar = React.createClass({
-  propTypes: {
+export default class Toolbar {
+  static propTypes = {
     saving: React.PropTypes.bool,
     forking: React.PropTypes.bool,
     onSave: React.PropTypes.func,
     onFork: React.PropTypes.func,
     onParserChange: React.PropTypes.func,
     parserName: React.PropTypes.string,
-    parserVersion: React.PropTypes.string,
-  },
+  };
 
-  render: function() {
+  render() {
+    let parser = parsers[this.props.parserName];
+    let parserInfo = this.props.parserName;
+    if (parser) {
+      if (parser.version) {
+        parserInfo += '-' + parser.version;
+      }
+      if (parser.homepage) {
+        parserInfo =
+          <a href={parser.homepage} target="_blank">{parserInfo}</a>;
+      }
+    }
     return (
       <div id="Toolbar">
         {/*<h1>JS AST Explorer</h1>*/}
@@ -55,26 +63,41 @@ var Toolbar = React.createClass({
           />
           Fork
         </button>
+        <ParserButton {...this.props} />
+        <ParserSettingsButton {...this.props} />
         <button
-          title="Click to toggle between esprima-fb and babel"
           type="button"
-          onClick={this.props.onParserChange}>
+          onClick={this.props.onToggleTransform}>
           <i
             className={cx({
               fa: true,
               'fa-lg': true,
-              'fa-code': true,
+              'fa-toggle-off': !this.props.transformPanelIsEnabled,
+              'fa-toggle-on': this.props.transformPanelIsEnabled,
               'fa-fw': true,
             })}
           />
-          &nbsp;{this.props.parserName}
+          &nbsp;Transform
         </button>
-        {/*<div id="parser">
-          Parser: {this.props.parserName}-{this.props.parserVersion}
-        </div>*/}
+	{/*
+        <a
+          target="_blank"
+          href="https://github.com/fkling/esprima_ast_explorer#features">
+          <i
+            className={cx({
+              fa: true,
+              'fa-lg': true,
+              'fa-question': true,
+              'fa-fw': true,
+            })}
+          />
+          Help
+        </a>
+        <div id="parser">
+          Parser: {parserInfo}
+        </div>
+        */}
       </div>
     );
-  },
-});
-
-module.exports = Toolbar;
+  }
+}

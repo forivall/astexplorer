@@ -1,6 +1,5 @@
-"use strict";
-var Parse = require('./Parse');
-var SnippetRevision = require('./SnippetRevision');
+import Parse from './Parse';
+import SnippetRevision from './SnippetRevision';
 var snippetQuery;
 var cache = {};
 global.__cache = cache;
@@ -10,7 +9,7 @@ function getIDAndRevisionFromHash() {
   if (match) {
     return {
       id: match[1],
-      rev: match[2] || 0
+      rev: match[2] || 0,
     };
   }
   return null;
@@ -20,17 +19,18 @@ function getFromCache(snippetID, rev) {
   var cacheEntry = cache[snippetID];
   return {
     snippet: cacheEntry && cacheEntry.snippet || null,
-    revision: cacheEntry && cacheEntry[rev] || null
+    revision: cacheEntry && cacheEntry[rev] || null,
   };
 }
 
-function setInCache(snippet, revision,rev) {
+function setInCache(snippet, revision, rev) {
   var cacheEntry = cache[snippet.id] || (cache[snippet.id] = {});
   cacheEntry.snippet = snippet;
   cacheEntry[rev] = revision;
 }
+var Snippet;
 if (Parse) {
-var Snippet = Parse.Object.extend('Snippet', {
+Snippet = Parse.Object.extend('Snippet', {
   fetchLatestRevision: function() {
     if (this._latestRevision) {
       return Parse.Promise.as(this._latestRevision);
@@ -48,24 +48,29 @@ var Snippet = Parse.Object.extend('Snippet', {
     // we only create a new revision if the code is different from the previous
     // revision
     return this.fetchLatestRevision().then(function(revision) {
-      if (!revision  || revision.get('code') !== data.code) {
+      const isNew = !revision ||
+        revision.get('code') !== data.code ||
+        revision.get('transform') !== data.transform;
+
+      if (isNew) {
         var newRevision = new SnippetRevision();
         newRevision.set('code', data.code);
+        newRevision.set('transform', data.transform);
         this.add('revisions', newRevision);
         return this.save().then(function(snippet) {
           var revisionNumber = snippet.get('revisions').length - 1;
           this._latestRevision = newRevision;
           setInCache(snippet, newRevision, revisionNumber);
           return {
-            snippet: snippet,
+            snippet,
             revision: newRevision,
-            revisionNumber: revisionNumber
+            revisionNumber: revisionNumber,
           };
         }.bind(this));
       }
       return null;
     }.bind(this));
-  }
+  },
 }, {
   fetch: function(snippetID, rev) {
     if (!snippetQuery) {
@@ -105,5 +110,5 @@ var Snippet = Parse.Object.extend('Snippet', {
   },
 });
 
-module.exports = Snippet;
 }
+export default Snippet;

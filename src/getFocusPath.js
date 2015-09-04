@@ -1,41 +1,43 @@
-"use strict";
-
-var isArray = require('./isArray');
+import * as parsers from './parsers';
 
 function isInRange(range, pos) {
   return pos >= range[0] && pos <= range[1];
 }
 
-function getFocusPath(node, pos, path) {
+export default function getFocusPath(node, pos, parserName, path) {
+  let parser = parsers[parserName];
   path = path || [];
-
-  if (node.range) {
-    if (isInRange(node.range, pos)) {
+  let range = parser.nodeToRange(node);
+  if (range) {
+    if (isInRange(range, pos)) {
       path.push(node);
     }
     else {
       return [];
     }
   }
-  else if (isArray(node) && node.length > 0) {
+  else if (Array.isArray(node) && node.length > 0) {
     // check first and last child
-    if (isInRange([node[0].range[0], node[node.length - 1].range[1]], pos)) {
-      path.push(node);
-    }
-    else {
-      return [];
+    let rangeFirst = parser.nodeToRange(node[0]);
+    let rangeLast = parser.nodeToRange(node[node.length - 1]);
+    if (rangeFirst && rangeLast) {
+      if (isInRange([rangeFirst[0], rangeLast[1]], pos)) {
+        path.push(node);
+      }
+      else {
+        return [];
+      }
     }
   }
   for (var prop in node) {
-    if (prop !== 'range' && node[prop] && typeof node[prop] === 'object') {
-      var childPath = getFocusPath(node[prop], pos);
+    if (prop !== 'range' && prop !== 'loc' &&
+        node[prop] && typeof node[prop] === 'object') {
+      var childPath = getFocusPath(node[prop], pos, parserName);
       if (childPath.length > 0) {
-        path.push.apply(path, childPath);
+        path.push(...childPath);
         break;
       }
     }
   }
   return path;
 }
-
-module.exports = getFocusPath;

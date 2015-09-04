@@ -1,14 +1,7 @@
-/**
- * @jsx React.DOM
- */
-"use strict";
+import React from 'react';
 
-var React = require('react/addons');
-
-var ErrorMessage = React.createClass({
-  render: function() {
+export default class ErrorMessage {
+  render() {
     return <div id="Error">{this.props.message}</div>;
   }
-});
-
-module.exports = ErrorMessage;
+}

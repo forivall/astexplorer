@@ -1,37 +1,69 @@
-/**@jsx React.DOM */
-/*jshint browser:true, newcap:false, expr:true*/
-"use strict";
+import CodeMirror from 'codemirror';
+import 'codemirror/mode/javascript/javascript';
+import PubSub from 'pubsub-js';
+import React from 'react/addons';
+import {keypress} from 'keypress';
 
-var CodeMirror = require('codemirror');
-require('codemirror/mode/javascript/javascript');
-var PubSub = require('pubsub-js');
-var React = require('react/addons');
-var keypress = require('keypress').keypress;
+export default class Editor {
+  static propTypes = {
+    defaultValue: React.PropTypes.string,
+    highlight: React.PropTypes.bool,
+    lineNumbers: React.PropTypes.bool,
+    readOnly: React.PropTypes.bool,
+  }
 
-var Editor = React.createClass({
+  static defaultProps = {
+    highlight: true,
+    lineNumbers: true,
+    readOnly: false,
+    onContentChange: () => {},
+    onActivity: () => {}
+  };
 
-  getValue: function() {
+  getValue() {
     return this.codeMirror && this.codeMirror.getValue();
-  },
+  }
 
-  componentWillReceiveProps: function(nextProps) {
-    if (nextProps.value !== this.codeMirror.getValue()) {
-      this.codeMirror.setValue(nextProps.value);
+  _setError(error) {
+    if (this.codeMirror) {
+      if (this.props.error) {
+        let lineNumber = this.props.error.loc ?
+          this.props.error.loc.line :
+          this.props.error.lineNumber;
+        if (lineNumber) {
+          this.codeMirror.removeLineClass(lineNumber-1, 'text', 'errorMarker');
+        }
+      }
+
+      if (error) {
+        let lineNumber = error.loc ? error.loc.line : error.lineNumber;
+        if (lineNumber) {
+          this.codeMirror.addLineClass(lineNumber-1, 'text', 'errorMarker');
+        }
+      }
     }
-  },
+  }
 
-  shouldComponentUpdate: function() {
+  componentWillReceiveProps(nextProps) {
+    if (nextProps.defaultValue !== this.props.defaultValue) {
+      this.codeMirror.setValue(nextProps.defaultValue);
+    }
+    this._setError(nextProps.error);
+  }
+
+  shouldComponentUpdate() {
     return false;
-  },
+  }
 
-  componentDidMount: function() {
+  componentDidMount() {
     this._CMHandlers = [];
     this._subscriptions = [];
-    this.codeMirror = CodeMirror(
-      this.refs.container.getDOMNode(),
+    this.codeMirror = CodeMirror( // eslint-disable-line new-cap
+      React.findDOMNode(this.refs.container),
       {
-        value: this.props.value,
-        lineNumbers: true
+        value: this.props.defaultValue,
+        lineNumbers: this.props.lineNumbers,
+        readOnly: this.props.readOnly,
       }
     );
 
@@ -41,72 +73,75 @@ var Editor = React.createClass({
 
     this._bindCMHandler('changes', () => {
       clearTimeout(this._updateTimer);
-      this._updateTimer = setTimeout(this._onContentChange, 200);
+      this._updateTimer = setTimeout(this._onContentChange.bind(this), 200);
     });
     this._bindCMHandler('cursorActivity', () => {
       clearTimeout(this._updateTimer);
-      this._updateTimer = setTimeout(this._onActivity, 100);
+      this._updateTimer = setTimeout(this._onActivity.bind(this), 100);
     });
 
-    this._keyListener = new keypress.Listener();
-    this._keyListener.simple_combo('meta z', event => {
-      if (event.target !== 'TEXTAREA') {
-        this.codeMirror.execCommand('undo');
-      }
-    });
-
-    this._markerRange = null;
-    this._mark = null;
     this._subscriptions.push(
-      PubSub.subscribe('CM.HIGHLIGHT', (_, range) => {
-        var doc = this.codeMirror.getDoc();
-        this._markerRange = range;
-        // We only want one mark at a time.
-        if (this._mark) this._mark.clear();
-        this._mark = this.codeMirror.markText(
-          doc.posFromIndex(range[0]),
-          doc.posFromIndex(range[1]),
-          {className: 'marked'}
-        );
-      }),
-
-      PubSub.subscribe('CM.CLEAR_HIGHLIGHT', (_, range) => {
-        if (!range ||
-          this._markerRange &&
-          range[0] === this._markerRange[0] &&
-          range[1] === this._markerRange[1]
-        ) {
-          this._markerRange = null;
-          if (this._mark) {
-            this._mark.clear();
-            this._mark = null;
-          }
-        }
-      }),
-
       PubSub.subscribe('PANEL_RESIZE', () => {
         if (this.codeMirror) {
           this.codeMirror.refresh();
         }
       })
     );
-  },
 
-  componentWillUnmount: function() {
+    if (this.props.highlight) {
+      this._markerRange = null;
+      this._mark = null;
+      this._subscriptions.push(
+        PubSub.subscribe('CM.HIGHLIGHT', (_, range) => {
+          var doc = this.codeMirror.getDoc();
+          this._markerRange = range;
+          // We only want one mark at a time.
+          if (this._mark) {
+            this._mark.clear();
+          }
+          this._mark = this.codeMirror.markText(
+            doc.posFromIndex(range[0]),
+            doc.posFromIndex(range[1]),
+            {className: 'marked'}
+          );
+        }),
+
+        PubSub.subscribe('CM.CLEAR_HIGHLIGHT', (_, range) => {
+          if (!range ||
+            this._markerRange &&
+            range[0] === this._markerRange[0] &&
+            range[1] === this._markerRange[1]
+          ) {
+            this._markerRange = null;
+            if (this._mark) {
+              this._mark.clear();
+              this._mark = null;
+            }
+          }
+        })
+      );
+    }
+
+    if (this.props.error) {
+      this._setError(this.props.error);
+    }
+  }
+
+  componentWillUnmount() {
     this._unbindHandlers();
     this._markerRange = null;
     this._mark = null;
     var container = this.refs.container.getDOMNode();
     container.removeChild(container.children[0]);
     this.codeMirror = null;
-  },
+  }
 
-  _bindCMHandler: function(event, handler) {
+  _bindCMHandler(event, handler) {
     this._CMHandlers.push(event, handler);
     this.codeMirror.on(event, handler);
-  },
+  }
 
-  _unbindHandlers: function() {
+  _unbindHandlers() {
     var cmHandlers = this._CMHandlers;
     for (var i = 0; i < cmHandlers.length; i += 2) {
       this.codeMirror.off(cmHandlers[i], cmHandlers[i+1]);
@@ -114,27 +149,27 @@ var Editor = React.createClass({
     this._subscriptions.forEach(function(token) {
       PubSub.unsubscribe(token);
     });
-  },
+  }
 
-  _onContentChange: function() {
+  _onContentChange() {
     var doc = this.codeMirror.getDoc();
-    this.props.onContentChange && this.props.onContentChange({
+    this.props.onContentChange({
       value: doc.getValue(),
-      cursor: doc.indexFromPos(doc.getCursor())
+      cursor: doc.indexFromPos(doc.getCursor()),
     });
-  },
+  }
 
-  _onActivity: function() {
-    this.props.onActivity && this.props.onActivity(
+  _onActivity() {
+    this.props.onActivity(
       this.codeMirror.getDoc().indexFromPos(this.codeMirror.getCursor())
     );
-  },
+  }
 
-  render: function() {
+  render() {
     return (
-      <div id="Editor" ref="container" />
+      <div className="editor" ref="container" />
     );
   }
-});
+}
 
 module.exports = Editor;

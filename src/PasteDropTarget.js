@@ -1,26 +1,28 @@
-"use strict";
+import React from 'react';
 
-var React = require('react/addons');
+import escodegen from 'escodegen';
 
 // TODO: replace with tacoscript-core/lib/esgen and tacoscript-core/lib/tacogen
-var escodegen = require('escodegen');
-
-var PasteDropTarget = React.createClass({
-  propTypes: {
+export default class PasteDropTarget extends React.Component {
+  static propTypes = {
     dropindiciator: React.PropTypes.element,
     onText: React.PropTypes.func,
-    onError: React.PropTypes.func
-  },
+    onError: React.PropTypes.func,
+  };
+  static defaultProps = {
+    onError: () => {}
+  };
 
-  getInitialState: function() {
-    return {
-      dragging: false
+  constructor(props) {
+    super(props);
+    this.state = {
+      dragging: false,
     };
-  },
+  }
 
-  componentDidMount: function() {
+  componentDidMount() {
     this._listeners = [];
-    var target = this.refs.container.getDOMNode();
+    var target = React.findDOMNode(this.refs.container);
 
     // Handle pastes
     this._bindListener(document, 'paste', event => {
@@ -41,7 +43,7 @@ var PasteDropTarget = React.createClass({
         }
         catch(ex) {
           if (event.target.nodeName !== 'TEXTAREA') {
-            this.props.onError && this.props.onError(
+            this.props.onError(
               'paste',
               event,
               'Cannot process pasted AST: ' + ex.message
@@ -55,7 +57,7 @@ var PasteDropTarget = React.createClass({
     var acceptedFileTypes = {
       'text/javascript': true,
       'application/json': true,
-      'text/plain': true
+      'text/plain': true,
     };
 
     var timer;
@@ -83,20 +85,20 @@ var PasteDropTarget = React.createClass({
       event.preventDefault();
       event.stopPropagation();
       var reader = new FileReader();
-      reader.onload = event => {
-        var text = event.target.result;
+      reader.onload = readerEvent => {
+        var text = readerEvent.target.result;
         switch (type) {
           case 'text/javascipt':
-            this.props.onText('drop', event, text);
+            this.props.onText('drop', readerEvent, text);
             break;
           case 'application/json':
             try {
-              this.props.onText('drop', event, this._jsonToCode(text));
+              this.props.onText('drop', readerEvent, this._jsonToCode(text));
             }
             catch(ex) {
-              this.props.onError && this.props.onError(
+              this.props.onError(
                 'drop',
-                event,
+                readerEvent,
                 'Unable to handle dropped file: ' + ex.message
               );
               throw ex;
@@ -107,9 +109,9 @@ var PasteDropTarget = React.createClass({
             try {
               text = this._jsonToCode(text);
             }
-            catch(ex) { /* swallow exception */}
+            catch(ex) { /* swallow exception */} // eslint-disable-line no-empty
             finally {
-              this.props.onText('drop', event, text);
+              this.props.onText('drop', readerEvent, text);
             }
             break;
         }
@@ -117,33 +119,33 @@ var PasteDropTarget = React.createClass({
       reader.readAsText(files[0]);
     }, true);
 
-    this._bindListener(target, 'dragleave', event => {
+    this._bindListener(target, 'dragleave', () => {
       clearTimeout(timer);
       timer = setTimeout(() => this.setState({dragging: false}), 50);
     }, true);
-  },
+  }
 
-  componentWillUnmount: function() {
-    for (var i = 0; i < this._listeners.length; i+= 4) {
+  componentWillUnmount() {
+    for (var i = 0; i < this._listeners.length; i += 4) {
       var [elem, event, listener, capture] = this._listeners[i];
       elem.removeEventListener(event, listener, capture);
     }
     this._listeners = null;
-  },
+  }
 
-  _jsonToCode: function(json) {
+  _jsonToCode(json) {
     var ast = JSON.parse(json);
     return escodegen.generate(ast, {format: {indent: {style: '  '}}});
-  },
+  }
 
-  _bindListener: function(elem, event, listener, capture) {
+  _bindListener(elem, event, listener, capture) {
     event.split(/\s+/).forEach(e => {
       elem.addEventListener(e, listener, capture);
       this._listeners.push(elem, listener, capture);
     });
-  },
+  }
 
-  render: function() {
+  render() {
     var {children, dropindicator, ...props} = this.props;
     if (!this.state.dragging) {
       dropindicator = null;
@@ -157,6 +159,4 @@ var PasteDropTarget = React.createClass({
       </div>
     );
   }
-});
-
-module.exports = PasteDropTarget;
+}
