@@ -22,6 +22,7 @@ export default {
   displayName: ID,
   version: '',
   homepage: '',
+  isStatic: true,
   defaultParser: {
     id: 'tacoscript-js',
   },

@@ -441,13 +441,24 @@ var App = React.createClass({
           <SplitPane
             className="splitpane"
             onResize={this._onResize}>
-            <Editor
-              ref="editor"
-              defaultValue={this.state.initialCode}
-              error={this.state.editorError}
-              onContentChange={this.onContentChange}
-              onActivity={this.onActivity}
-            />
+            <SplitPane
+              className="splitpane"
+              vertical={true}
+              onResize={this._onResize}>
+              <Editor
+                ref="editor"
+                defaultValue={this.state.initialCode}
+                error={this.state.editorError}
+                onContentChange={this.onContentChange}
+                onActivity={this.onActivity}
+              />
+              {this.state.showTransformPanel && this.state.transformer.isStatic ? <TransformOutput
+                transformer={this.state.transformer}
+                transformCode={this.state.currentTransformCode}
+                code={this.state.currentCode}
+                ast={this.state.ast}
+              /> : null}
+            </SplitPane>
             <ASTOutput
               key={this.state.parser.id}
               focusPath={this.state.focusPath}
@@ -455,7 +466,7 @@ var App = React.createClass({
               editorError={this.state.editorError}
             />
           </SplitPane>
-          {this.state.showTransformPanel ? <SplitPane
+          {this.state.showTransformPanel && !this.state.transformer.isStatic ? <SplitPane
             className="splitpane"
             onResize={this._onResize}>
             <Editor
