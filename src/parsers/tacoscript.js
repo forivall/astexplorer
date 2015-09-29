@@ -4,7 +4,7 @@
 import * as LocalStorage from '../LocalStorage';
 import SettingsRenderer from './utils/SettingsRenderer';
 
-import tacoscriptParseJs from 'tacoscript-core/lib/helpers/parse-js';
+import tacoscriptParseJs from 'tacoscript-core/lib/parse-js';
 
 const ID = 'tacoscript-js';
 

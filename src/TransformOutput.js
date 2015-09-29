@@ -33,9 +33,9 @@ export default class TransformOutput extends React.Component {
       }
     }
     if (propsChanged) {
-      if (console.clear) {
-        console.clear();
-      }
+      // if (console.clear) {
+      //   console.clear();
+      // }
       nextProps.transformer.transform(nextProps).then(
         result => {
           let error = null;
