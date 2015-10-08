@@ -34,7 +34,7 @@ var App = React.createClass({
     }
     const initialCode = revision && revision.get('code') || defaultCode;
     // const transformerID = revision && revision.get('toolID');
-    const transformerID = 'tacoscript-js';
+    const transformerID = 'tacoscript-taco';
     let transformer = transformerID && getTransformerByID(transformerID);
     const initialTransformCode = revision && revision.get('transform');
     if (initialTransformCode && !transformer) {
