@@ -45,7 +45,8 @@ export default class PropertyList {
   render() {
     var focusPath = this.props.focusPath;
     var level = this.props.level;
-    var object = getMappableProperties(this.props.object);
+    // var object = getMappableProperties(this.props.object);
+    var object = this.props.object;
     var properties = Object.keys(object).map(key => {
       var v = object[key];
       return ( // eslint-disable-line consistent-return
