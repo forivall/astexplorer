@@ -33,6 +33,10 @@
     "esprima": "^2.5",
     "jscodeshift": "^0.3",
     "keypress": "git://github.com/dmauro/Keypress",
+    "lodash.isfunction": "^3.0.6",
+    "lodash.isundefined": "^3.0.1",
+    "lodash.keysin": "^3.0.8",
+    "lodash.uniq": "^3.2.2",
     "pubsub-js": "^1.4.2",
     "react": "^0.13.1",
     "recast": "^0.10.32",
@@ -45,6 +49,7 @@
         {
           "stage": 0,
           "optional": [
+            "optimisation.flow.forOf",
             "runtime"
           ]
         }
