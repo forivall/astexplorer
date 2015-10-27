@@ -30,7 +30,13 @@ export default {
   homepage: pkg.homepage,
 
   parse(code) {
-    return loadAndExectue(
+    return options.plugins.cst ? loadAndExectue(
+      ['babylon', 'babylon-plugin-cst'],
+      (parser, cstPlugin) => {
+        cstPlugin.install();
+        return parser.parse(code, options);
+      }
+    ) : loadAndExectue(
       ['babylon'],
       parser => parser.parse(code, options)
     );
@@ -54,7 +60,7 @@ let parserSettings = [
   'strictMode',
 ];
 let features = Object.keys(options.features);
-let plugins = ['jsx', 'flow'];
+let plugins = ['cst', 'jsx', 'flow'];
 
 function changeOption(name, {target}) {
   if (name === 'sourceType') {
