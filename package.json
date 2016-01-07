@@ -46,6 +46,7 @@
     "codemirror-graphql": "^0.2.1",
     "css": "^2.2.1",
     "cssom": "^0.3.0",
+    "cstify": "^0.2.6",
     "domhandler": "^2.3.0",
     "escodegen": "^1.4.1",
     "espree": "^2.2.4",
