@@ -34,7 +34,7 @@ cp CNAME "$TARGETPATH/CNAME"
 
 # Commit changes
 cd $TARGETPATH
-if git diff --quiet && git diff --cached --quite; then
+if git diff --quiet && git diff --cached --quiet; then
   echo "No changes, nothing to commit..."
   exit 0
 fi
