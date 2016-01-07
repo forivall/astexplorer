@@ -14,6 +14,7 @@ if [ ! -d "$TARGETPATH" ]; then
   git clone ./ "$TARGETPATH"
   cd "$TARGETPATH"
   git remote set-url --push origin $REMOTE
+  git rm -f .gitignore .eslintrc
   cd - > /dev/null
 fi
 
@@ -23,7 +24,7 @@ cd "$TARGETPATH"
 git checkout --detach --quiet
 git branch -D gh-pages
 git checkout --orphan gh-pages
-git rm -rf * .gitignore .eslintrc
+git rm -rf *
 cd - > /dev/null
 
 echo "Building..."
