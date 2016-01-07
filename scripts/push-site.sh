@@ -35,12 +35,12 @@ cp README.md "$TARGETPATH/README.md"
 
 # Commit changes
 cd $TARGETPATH
+git add -A
 if git diff --quiet && git diff --cached --quiet; then
   echo "No changes, nothing to commit..."
   exit 0
 fi
 echo "Committing..."
-git add -A
 git commit -m"Update site from $BRANCH"
 echo "Pushing..."
 git push --force origin gh-pages:refs/heads/gh-pages
