@@ -30,7 +30,7 @@ echo "Building..."
 rm -rf out/*
 npm run build
 echo "Copying artifacts..."
-cp -R out/ "$TARGETPATH/"
+cp -R out/* "$TARGETPATH/"
 cp README.md "$TARGETPATH/README.md"
 
 # Commit changes
