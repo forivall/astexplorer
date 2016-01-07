@@ -42,5 +42,5 @@ echo "Committing..."
 git add -A
 git commit -m"Update site from $BRANCH"
 echo "Pushing..."
-git push --force forivall gh-pages:gh-pages
+git push --force origin
 echo "done"
