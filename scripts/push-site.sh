@@ -1,7 +1,7 @@
 #!/bin/sh
 
-TARGETPATH="../$(basename $(pwd))_gh_pages"
-REMOTE=$(git remote -v | grep origin | grep "(push)" | cut -f 2 | cut -d ' ' -f 1)
+TARGETPATH="../$(basename "$(pwd)")_gh_pages"
+REMOTE=$(git remote -v | grep forivall | grep "(push)" | cut -f 2 | cut -d ' ' -f 1)
 
 if ! git diff --quiet && git diff --cached --quiet; then
   echo >&2 "Cannot build, your index contains uncommitted changes."
@@ -12,15 +12,14 @@ if [ ! -d "$TARGETPATH" ]; then
   echo "Cloning into '$TARGETPATH'..."
   git clone ./ "$TARGETPATH"
   cd "$TARGETPATH"
-  git checkout gh-pages
-  git remote set-url --push origin $REMOTE
+  git checkout --orphan gh-pages
+  git remote set-url --push forivall $REMOTE
   cd - > /dev/null
 fi
 
 # Updating
 echo "Clear target..."
 cd "$TARGETPATH"
-git pull origin
 git rm -rf *
 cd - > /dev/null
 
@@ -42,5 +41,5 @@ echo "Committing..."
 git add -A
 git commit -m"Update site"
 echo "Pushing..."
-git push origin
+git push --force forivall gh-pages:gh-pages
 echo "done"
