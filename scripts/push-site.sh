@@ -23,7 +23,7 @@ cd "$TARGETPATH"
 git checkout --detach --quiet
 git branch -D gh-pages
 git checkout --orphan gh-pages
-rm -rf * .*
+rm -rf * .gitignore .eslintrc
 cd - > /dev/null
 
 echo "Building..."
