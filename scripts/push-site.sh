@@ -13,14 +13,16 @@ if [ ! -d "$TARGETPATH" ]; then
   echo "Cloning into '$TARGETPATH'..."
   git clone ./ "$TARGETPATH"
   cd "$TARGETPATH"
-  git checkout --orphan gh-pages
-  git remote set-url --push forivall $REMOTE
+  git remote set-url --push origin $REMOTE
   cd - > /dev/null
 fi
 
 # Updating
 echo "Clear target..."
 cd "$TARGETPATH"
+git checkout --detach
+git branch -D gh-pages
+git checkout --orphan gh-pages
 git rm -rf *
 cd - > /dev/null
 
@@ -30,7 +32,6 @@ npm run build
 echo "Copying artifacts..."
 cp -R out/ "$TARGETPATH/"
 cp README.md "$TARGETPATH/README.md"
-cp CNAME "$TARGETPATH/CNAME"
 
 # Commit changes
 cd $TARGETPATH
@@ -42,5 +43,5 @@ echo "Committing..."
 git add -A
 git commit -m"Update site from $BRANCH"
 echo "Pushing..."
-git push --force origin
+git push --force origin gh-pages:refs/heads/gh-pages
 echo "done"
