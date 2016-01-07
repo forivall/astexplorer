@@ -20,7 +20,7 @@ fi
 # Updating
 echo "Clear target..."
 cd "$TARGETPATH"
-git checkout --detach
+git checkout --detach --quiet
 git branch -D gh-pages
 git checkout --orphan gh-pages
 git rm -rf *
