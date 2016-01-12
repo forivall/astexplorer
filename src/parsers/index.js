@@ -58,6 +58,9 @@ export function getDefaultCategory() {
 }
 
 export function getDefaultParser(category = getDefaultCategory()) {
+  if (category === categoryByID.javascript) {
+    return getParserByID('babylon6+cstify');
+  }
   return category.parsers[0];
 }
 
