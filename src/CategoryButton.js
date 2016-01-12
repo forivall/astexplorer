@@ -6,6 +6,7 @@ const categoryIcon = {
   javascript: 'fa-jsfiddle',
   css: 'fa-css3',
   htmlmixed: 'fa-html5',
+  tacoscript: 'overridefa-tacoscript',
 };
 
 export default class CategoryButton extends React.Component {

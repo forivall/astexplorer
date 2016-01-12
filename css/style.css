@@ -153,6 +153,16 @@ html {
   text-align: left;
 }
 
+.overridefa-tacoscript.fa-fw {
+  width: 1.05em;
+  /*padding: 0 calc((1.285714em - 1.05em) / 2);*/
+  padding: 0 0.117857em;
+}
+.overridefa-tacoscript:before {
+  content: url(../assets/tacoscript.svg);
+  vertical-align: text-bottom;
+}
+
 #info {
   color: #898989;
   cursor: default;
