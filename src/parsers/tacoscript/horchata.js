@@ -22,7 +22,7 @@ export default {
   displayName: ID,
   version: pkg.version,
   homepage: pkg.homepage,
-  locationProps: new Set(['loc', 'start', 'end']),
+  locationProps: new Set(['loc', 'start', 'end', 'tokenStart', 'tokenEnd', 'input', 'sourceElements', '_childReferences']),
 
   loadParser(callback) {
     require(['horchata'], callback);
